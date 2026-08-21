@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api import api_router
 from app.core.config import get_settings
 from app.core.logging import RequestIdMiddleware, configure_logging
+from app.db.session import engine
 
 
 @asynccontextmanager
@@ -35,9 +38,47 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict:
-        return {"status": "ok", "service": settings.app_name}
+        checks = {
+            "database": await _check_database(),
+            "redis": await _check_redis(settings.redis_url),
+            "ollama": await _check_ollama(settings.ollama_base_url),
+        }
+        overall = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
+        return {"status": overall, "service": settings.app_name, **checks}
 
     return app
+
+
+async def _check_database() -> str:
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return "ok"
+    except Exception:
+        return "error"
+
+
+async def _check_redis(redis_url: str) -> str:
+    try:
+        import redis.asyncio as redis_async
+
+        client = redis_async.from_url(redis_url, socket_connect_timeout=2)
+        try:
+            pong = await client.ping()
+            return "ok" if pong else "error"
+        finally:
+            await client.aclose()
+    except Exception:
+        return "error"
+
+
+async def _check_ollama(base_url: str) -> str:
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{base_url.rstrip('/')}/api/tags")
+            return "ok" if resp.status_code < 500 else "error"
+    except Exception:
+        return "error"
 
 
 app = create_app()
