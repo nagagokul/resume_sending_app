@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Uploads & generated
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.pdf
+*.docx
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.log
+
+# Docker
+docker-compose.override.yml
+
+# Test artifacts
+playwright-report/
+test-results/
+coverage/
