@@ -11,15 +11,15 @@ Free-first defaults: **Ollama** (local LLM), **PostgreSQL + pgvector**, **Redis*
 
 ## Prerequisites
 
-Install these on Windows 10/11 before setup:
+Install these on Windows 10/11 (or inside WSL Ubuntu) before setup:
 
 | Dependency | Notes |
 |------------|--------|
-| Python 3.11+ | Enable **Add python.exe to PATH** |
+| **Python 3.11 or 3.12** | Do **not** use Python 3.14 yet — many packages lack wheels. Enable PATH on Windows. |
 | Node.js 20+ LTS | Includes npm |
-| PostgreSQL | Native Windows installer; enable **pgvector** |
-| Redis | Redis for Windows, [Memurai](https://www.memurai.com/), or another Redis-compatible service on `localhost:6379` |
-| Ollama | [ollama.com/download](https://ollama.com/download) for Windows |
+| PostgreSQL | Native Windows or Linux install; enable **pgvector** |
+| Redis | Redis for Windows, [Memurai](https://www.memurai.com/), or `redis-server` in WSL on `localhost:6379` |
+| Ollama | [ollama.com/download](https://ollama.com/download) (Windows app is fine even if backend runs in WSL) |
 | Git | For cloning |
 
 Do **not** install Docker for this project.
@@ -29,11 +29,11 @@ Do **not** install Docker for this project.
 ## Architecture (native)
 
 ```text
-Windows
+Windows / WSL
  │
  ├── Next.js frontend        → http://localhost:3000
  ├── FastAPI backend         → http://127.0.0.1:8000
- ├── Celery worker           → pool=solo (Windows-safe)
+ ├── Celery worker           → pool=solo on Windows; default pool OK in WSL/Linux
  ├── PostgreSQL              → localhost:5432
  ├── Redis                   → localhost:6379
  └── Ollama                 → localhost:11434
@@ -41,7 +41,7 @@ Windows
 
 ---
 
-## Installation
+## Installation (Windows PowerShell)
 
 ```powershell
 git clone <repository-url>
@@ -64,6 +64,52 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 7. Pull configured Ollama models (when CLI is available)
 
 Edit `.env` and set your real PostgreSQL password **before** relying on migrations if the default does not match your install.
+
+---
+
+## Installation (WSL Ubuntu)
+
+If you develop inside WSL (as under `/mnt/d/...`), use **Python 3.12**, not the distro default 3.14:
+
+```bash
+cd /mnt/d/resume_sending_app
+
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev libpq-dev build-essential
+
+# Remove a broken venv created with Python 3.14
+rm -rf backend/.venv backend/.venv
+
+chmod +x scripts/setup-wsl.sh
+./scripts/setup-wsl.sh
+```
+
+Or manually:
+
+```bash
+cd /mnt/d/resume_sending_app/backend
+rm -rf .venv
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip wheel
+pip install -r requirements.txt
+python -m playwright install chromium
+alembic upgrade head
+```
+
+### Why `psycopg2-binary` / `pg_config` failed
+
+Ubuntu’s default `python3` may be **3.14**. There is often **no binary wheel** for older `psycopg2-binary` on 3.14, so pip tries to **compile from source** and needs `pg_config` (`libpq-dev`).
+
+This project now uses **`psycopg` (v3)** for Alembic, but **Python 3.12 is still required** for reliable installs of the rest of the stack.
+
+If you must stay on a newer Python temporarily:
+
+```bash
+sudo apt install -y libpq-dev build-essential
+```
+
+Prefer recreating the venv with `python3.12` instead.
 
 ---
 
@@ -265,6 +311,7 @@ cd backend
 | `PostgreSQL unavailable` | Start the Windows PostgreSQL service; confirm `localhost:5432`; check password in `.env` |
 | `Redis unavailable` | Start Redis/Memurai on `localhost:6379` |
 | `Ollama unavailable` | Launch Ollama Desktop; run `ollama list` |
+| `pg_config` / `psycopg2` build error in WSL | You are on Python 3.14+. Install `python3.12` and recreate `.venv` (see WSL section). Optionally `sudo apt install libpq-dev`. |
 | Port already in use | Change `BACKEND_PORT` / stop the other process on 3000/8000 |
 | venv activation blocked | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | `alembic upgrade` fails | Create DB + `CREATE EXTENSION vector;` then retry |

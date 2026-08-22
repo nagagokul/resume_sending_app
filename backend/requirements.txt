@@ -4,7 +4,8 @@ pydantic==2.10.4
 pydantic-settings==2.7.0
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
-psycopg2-binary==2.9.10
+# Sync DB driver for Alembic (psycopg3). Prefer binary wheels; avoid legacy psycopg2 on new Python.
+psycopg[binary]>=3.2.3,<4
 alembic==1.14.0
 httpx==0.28.1
 beautifulsoup4==4.12.3
