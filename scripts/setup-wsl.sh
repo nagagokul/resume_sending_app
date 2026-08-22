@@ -101,26 +101,52 @@ if command -v apt-get >/dev/null 2>&1; then
 fi
 
 cd "$ROOT/backend"
-rm -rf .venv
-"$PYTHON_BIN" -m venv .venv
+if [[ -d .venv ]]; then
+  echo "[OK] Reusing existing backend/.venv (delete it manually if you need a clean recreate)"
+else
+  "$PYTHON_BIN" -m venv .venv
+fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 python -m pip install --upgrade pip wheel
 pip install -r requirements.txt
-python -m playwright install chromium || echo "[WARN] Playwright browser install failed"
+python -m playwright install chromium || echo "[WARN] Playwright browser install failed (retry later)"
+if command -v sudo >/dev/null 2>&1; then
+  echo "Installing Playwright OS libraries (may prompt for sudo)..."
+  sudo "$ROOT/backend/.venv/bin/playwright" install-deps chromium 2>/dev/null \
+    || sudo apt-get install -y libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+         libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
+         libasound2t64 libpango-1.0-0 libcairo2 2>/dev/null \
+    || echo "[WARN] Playwright host deps not fully installed — run: sudo backend/.venv/bin/playwright install-deps"
+fi
 
 cd "$ROOT/frontend"
-npm install
+echo "Installing frontend dependencies (npm)..."
+npm config set fetch-retries 5
+npm config set fetch-retry-mintimeout 20000
+npm config set fetch-retry-maxtimeout 120000
+npm config set fetch-timeout 300000
+if ! npm install; then
+  echo "[WARN] npm install failed (often network timeout). Retrying once..."
+  sleep 3
+  npm install || {
+    echo "[ERROR] npm install failed. Retry manually:"
+    echo "  cd frontend && npm install"
+    exit 1
+  }
+fi
 
 cd "$ROOT/backend"
 echo "Running migrations (DB must exist: ai_job_agent + CREATE EXTENSION vector)..."
 alembic upgrade head || {
-  echo "[ERROR] alembic failed — create DB/extension and fix .env, then: cd backend && source .venv/bin/activate && alembic upgrade head"
-  exit 1
+  echo "[WARN] alembic failed — start PostgreSQL, create DB/extension, fix .env, then:"
+  echo "  cd backend && source .venv/bin/activate && alembic upgrade head"
 }
 
 echo
-echo "Setup complete."
+echo "Setup complete (or as far as local services allow)."
 echo "  Backend:  cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
 echo "  Worker:   cd backend && source .venv/bin/activate && celery -A app.workers.celery_app worker --loglevel=info"
 echo "  Frontend: cd frontend && npm run dev"
+echo
+echo "If Postgres/Redis/Ollama were missing, start them, then run alembic upgrade head."
