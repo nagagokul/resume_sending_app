@@ -21,9 +21,10 @@ export default function SettingsPage() {
       <Panel className="mt-4">
         <h2 className="font-display text-xl">Providers</h2>
         <ul className="mt-3 space-y-2 text-sm text-ink-700">
-          <li>LLM: Ollama (default) · optional Gemini / OpenAI-compatible</li>
+          <li>LLM: Ollama on localhost:11434 (default) · optional Gemini / OpenAI-compatible</li>
           <li>Jobs: Greenhouse + Lever public APIs</li>
-          <li>Browser assist: Playwright (no CAPTCHA/MFA bypass)</li>
+          <li>Browser assist: Playwright Chromium (local install, no CAPTCHA/MFA bypass)</li>
+          <li>Data: native PostgreSQL + Redis on localhost</li>
         </ul>
       </Panel>
     </div>

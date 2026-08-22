@@ -45,6 +45,10 @@ async def save_and_parse_resume(
         raise ValueError(f"File exceeds max size of {settings.max_upload_size_mb}MB")
 
     upload_root = Path(settings.upload_dir)
+    if not upload_root.is_absolute():
+        from app.core.config import BACKEND_ROOT
+
+        upload_root = BACKEND_ROOT / upload_root
     upload_root.mkdir(parents=True, exist_ok=True)
     stored_name = f"{user.id}_{uuid.uuid4().hex}{suffix}"
     dest = upload_root / stored_name

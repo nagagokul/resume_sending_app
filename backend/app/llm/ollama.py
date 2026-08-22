@@ -25,7 +25,7 @@ class OllamaProvider(LLMProvider):
         settings = get_settings()
         self._base_url = (base_url or settings.ollama_base_url).rstrip("/")
         self._model = model or settings.ollama_model
-        self._embed_model = embed_model or settings.ollama_embed_model
+        self._embed_model = embed_model or settings.resolved_embed_model
 
     @property
     def name(self) -> str:

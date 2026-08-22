@@ -32,6 +32,8 @@ out/
 # Uploads & generated
 backend/uploads/*
 !backend/uploads/.gitkeep
+logs/*
+!logs/.gitkeep
 *.pdf
 *.docx
 
@@ -41,9 +43,7 @@ backend/uploads/*
 .DS_Store
 *.swp
 *.log
-
-# Docker
-docker-compose.override.yml
+Thumbs.db
 
 # Test artifacts
 playwright-report/
