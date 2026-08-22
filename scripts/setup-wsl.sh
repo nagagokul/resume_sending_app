@@ -1,6 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Native setup inside WSL Ubuntu (no Docker).
 # Prefer Python 3.12 — system Python 3.14 often lacks wheels for DB drivers.
+# Note: this file must use LF line endings (not CRLF). If you see
+#   env: $'bash\r': No such file or directory
+# run:  sed -i 's/\r$//' scripts/setup-wsl.sh
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

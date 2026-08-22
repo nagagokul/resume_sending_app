@@ -81,6 +81,8 @@ sudo apt install -y python3.12 python3.12-venv python3.12-dev libpq-dev build-es
 rm -rf backend/.venv backend/.venv
 
 chmod +x scripts/setup-wsl.sh
+# If checkout used Windows CRLF and you see: env: $'bash\r': No such file or directory
+sed -i 's/\r$//' scripts/setup-wsl.sh
 ./scripts/setup-wsl.sh
 ```
 
