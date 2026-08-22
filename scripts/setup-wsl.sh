@@ -112,12 +112,16 @@ python -m pip install --upgrade pip wheel
 pip install -r requirements.txt
 python -m playwright install chromium || echo "[WARN] Playwright browser install failed (retry later)"
 if command -v sudo >/dev/null 2>&1; then
-  echo "Installing Playwright OS libraries (may prompt for sudo)..."
-  sudo "$ROOT/backend/.venv/bin/playwright" install-deps chromium 2>/dev/null \
-    || sudo apt-get install -y libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-         libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
-         libasound2t64 libpango-1.0-0 libcairo2 2>/dev/null \
-    || echo "[WARN] Playwright host deps not fully installed — run: sudo backend/.venv/bin/playwright install-deps"
+  echo "Installing Playwright OS libraries for Ubuntu 24.04+/26.04 (t64 packages)..."
+  # playwright install-deps often fails on Ubuntu 26.04 (resolute) due to obsolete package names
+  sudo apt-get install -y \
+    libnss3 libnspr4 \
+    libatk1.0-0t64 libatk-bridge2.0-0t64 libatspi2.0-0t64 \
+    libcups2t64 libdrm2 libdbus-1-3 libxcb1 libx11-6 libx11-xcb1 libxcomposite1 \
+    libxdamage1 libxext6 libxfixes3 libxrandr2 libxkbcommon0 libgbm1 \
+    libpango-1.0-0 libcairo2 libasound2t64 libxshmfence1 \
+    fonts-liberation ca-certificates \
+    || echo "[WARN] Some Playwright libs missing — browser assist may not work yet; core app still runs."
 fi
 
 cd "$ROOT/frontend"
