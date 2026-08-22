@@ -39,12 +39,27 @@ MAJOR="$("$PYTHON_BIN" -c 'import sys; print(sys.version_info.major)')"
 MINOR="$("$PYTHON_BIN" -c 'import sys; print(sys.version_info.minor)')"
 if [[ "$MAJOR" -eq 3 && "$MINOR" -ge 14 ]]; then
   echo
-  echo "[ERROR] Python $VER is too new for several pinned wheels (asyncpg/psycopg/pydantic)."
-  echo "Install Python 3.12 in WSL, then re-run this script:"
+  echo "[ERROR] Python $VER is too new for this project (need 3.11 or 3.12)."
+  echo "python3.12 was not found on PATH, so the script fell back to system python3."
+  echo
+  echo "Install Python 3.12, then re-run ./scripts/setup-wsl.sh"
+  echo
+  echo "Option A — deadsnakes PPA (recommended on newer Ubuntu):"
+  echo "  sudo apt update"
+  echo "  sudo apt install -y software-properties-common"
+  echo "  sudo add-apt-repository -y ppa:deadsnakes/ppa"
   echo "  sudo apt update"
   echo "  sudo apt install -y python3.12 python3.12-venv python3.12-dev libpq-dev build-essential"
   echo "  rm -rf backend/.venv"
   echo "  ./scripts/setup-wsl.sh"
+  echo
+  echo "Option B — uv (downloads CPython 3.12 into the project):"
+  echo "  curl -LsSf https://astral.sh/uv/install.sh | sh"
+  echo "  source \$HOME/.local/bin/env"
+  echo "  cd backend && rm -rf .venv"
+  echo "  uv venv --python 3.12 .venv"
+  echo "  source .venv/bin/activate"
+  echo "  uv pip install -r requirements.txt"
   exit 1
 fi
 
